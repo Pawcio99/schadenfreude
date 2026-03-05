@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Odczłowieczenie jako regres cywilizacyjny</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1208;
+    --ink-light: #3d2f1a;
+    --parchment: #f5f0e8;
+    --parchment-dark: #ede6d4;
+    --accent: #8b1a1a;
+    --accent-gold: #b8860b;
+    --accent-light: #c4a882;
+    --rule: #c4a882;
+    --margin-note: #6b4f2a;
+    --section-bg: #faf7f0;
+    --code-bg: #f0ebe0;
+    --max-w: 860px;
+    --col-text: 640px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.85;
+    color: var(--ink);
+    background: var(--parchment);
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(184,134,11,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(139,26,26,0.04) 0%, transparent 60%);
+    min-height: 100vh;
+  }
+
+  /* ── PROGRESS BAR ── */
+  #progress {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-gold));
+    width: 0%; z-index: 1000;
+    transition: width 0.1s linear;
+  }
+
+  /* ── SIDEBAR NAV ── */
+  #sidenav {
+    position: fixed; left: 0; top: 50%;
+    transform: translateY(-50%);
+    padding: 1rem 0.5rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+    z-index: 100;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  #sidenav.visible { opacity: 1; }
+  .nav-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent-light);
+    cursor: pointer; border: none;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .nav-dot:hover, .nav-dot.active {
+    background: var(--accent);
+    transform: scale(1.4);
+  }
+  .nav-dot::after {
+    content: attr(data-label);
+    position: absolute; left: 1.2rem; top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--ink-light);
+    opacity: 0; transition: opacity 0.2s;
+    pointer-events: none;
+    background: var(--parchment-dark);
+    padding: 2px 6px; border-radius: 3px;
+  }
+  .nav-dot:hover::after { opacity: 1; }
+
+  /* ── WRAPPER ── */
+  .page-wrap {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 0 2rem 4rem;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 4rem 0 0;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 3rem;
+  }
+
+  .journal-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.15em;
+    color: var(--accent); text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .journal-label::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--rule);
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 900;
+    line-height: 1.15;
+    color: var(--ink);
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .subtitle {
+    font-family: 'Source Serif 4', serif;
+    font-size: 1.05rem;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--ink-light);
+    margin-bottom: 2rem;
+    max-width: 600px;
+    line-height: 1.6;
+  }
+
+  .meta-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--rule);
+    margin-top: 1.5rem;
+  }
+  .meta-item label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent-gold);
+    margin-bottom: 0.25rem;
+  }
+  .meta-item span {
+    font-size: 0.82rem; color: var(--ink-light);
+  }
+
+  /* ── ABSTRACT ── */
+  .abstract-box {
+    background: var(--parchment-dark);
+    border-left: 4px solid var(--accent);
+    padding: 2rem 2.5rem;
+    margin: 2rem 0 3rem;
+    position: relative;
+  }
+  .abstract-box::before {
+    content: 'STRESZCZENIE';
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 0.2em;
+    color: var(--accent); display: block;
+    margin-bottom: 0.75rem;
+  }
+  .abstract-box p {
+    font-size: 0.92rem;
+    line-height: 1.8;
+    font-style: italic;
+    color: var(--ink-light);
+  }
+  .keywords {
+    margin-top: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; color: var(--margin-note);
+  }
+  .keywords span { color: var(--accent); }
+
+  /* ── SECTIONS ── */
+  section {
+    margin-bottom: 3.5rem;
+    scroll-margin-top: 2rem;
+  }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule);
+    display: flex; align-items: baseline; gap: 0.75rem;
+  }
+  h2 .sec-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    font-style: italic;
+    color: var(--ink-light);
+    margin: 2rem 0 0.75rem;
+  }
+
+  p { margin-bottom: 1.1rem; max-width: var(--col-text); }
+
+  /* ── PULL QUOTE ── */
+  blockquote {
+    border-left: 3px solid var(--accent-gold);
+    margin: 2rem 0 2rem 1.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--section-bg);
+  }
+  blockquote p {
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--ink-light);
+    margin: 0;
+  }
+  blockquote cite {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent-gold);
+    margin-top: 0.5rem;
+    font-style: normal;
+  }
+
+  /* ── THESIS BOX ── */
+  .thesis {
+    background: var(--ink);
+    color: var(--parchment);
+    padding: 1.75rem 2rem;
+    margin: 2rem 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .thesis::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-gold));
+  }
+  .thesis p {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-style: italic;
+    line-height: 1.7;
+    margin: 0;
+    color: var(--parchment);
+    max-width: 100%;
+  }
+  .thesis-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; letter-spacing: 0.2em;
+    color: var(--accent-gold);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  /* ── STAT BOXES ── */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem; margin: 2rem 0;
+  }
+  .stat-box {
+    background: var(--section-bg);
+    border: 1px solid var(--rule);
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+    display: block;
+  }
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-light);
+    margin-top: 0.35rem;
+    display: block;
+    text-transform: uppercase;
+  }
+
+  /* ── TRIAD TABLE ── */
+  .triad-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0; margin: 2rem 0;
+    border: 1px solid var(--rule);
+  }
+  .triad-cell {
+    padding: 1.5rem;
+    border-right: 1px solid var(--rule);
+  }
+  .triad-cell:last-child { border-right: none; }
+  .triad-cell h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem; font-weight: 700;
+    color: var(--accent); margin-bottom: 0.25rem;
+  }
+  .triad-cell .triad-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; color: var(--accent-gold);
+    letter-spacing: 0.08em; display: block;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+  }
+  .triad-cell p { font-size: 0.85rem; margin: 0; max-width: 100%; }
+
+  /* ── REGRESSION SCHEMA ── */
+  .schema {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--section-bg);
+    border: 1px solid var(--rule);
+  }
+  .schema-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent-gold);
+    margin-bottom: 1rem;
+  }
+  .schema-steps {
+    display: flex; flex-wrap: wrap;
+    align-items: center; gap: 0.5rem;
+  }
+  .schema-step {
+    background: var(--parchment-dark);
+    border: 1px solid var(--rule);
+    padding: 0.5rem 1rem;
+    font-size: 0.82rem;
+    font-family: 'Source Serif 4', serif;
+    color: var(--ink);
+    position: relative;
+  }
+  .schema-step.red { border-color: var(--accent); color: var(--accent); }
+  .schema-arrow {
+    color: var(--accent-gold);
+    font-size: 1.1rem; font-weight: bold;
+  }
+
+  /* ── FOOTNOTES / REFERENCES ── */
+  .ref-note {
+    font-size: 0.78rem;
+    color: var(--margin-note);
+    font-style: italic;
+    vertical-align: super;
+    cursor: help;
+  }
+
+  /* ── CONCLUSIONS ── */
+  .conclusions ol {
+    list-style: none;
+    counter-reset: wnioski;
+    margin: 1rem 0;
+  }
+  .conclusions ol li {
+    counter-increment: wnioski;
+    padding: 1rem 1rem 1rem 3.5rem;
+    position: relative;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.92rem;
+    max-width: var(--col-text);
+  }
+  .conclusions ol li:last-child { border-bottom: none; }
+  .conclusions ol li::before {
+    content: 'W.' counter(wnioski);
+    position: absolute; left: 0; top: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: 500;
+    background: var(--parchment-dark);
+    padding: 0.1rem 0.4rem;
+  }
+
+  /* ── LITERATURE ── */
+  .lit-entry {
+    padding: 0.75rem 0 0.75rem 2.5rem;
+    border-bottom: 1px dashed var(--rule);
+    position: relative;
+    font-size: 0.82rem;
+    max-width: var(--col-text);
+  }
+  .lit-entry .lit-num {
+    position: absolute; left: 0; top: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; color: var(--accent-gold);
+  }
+  .lit-entry em { color: var(--ink-light); }
+
+  /* ── LICENSE FOOTER ── */
+  footer {
+    margin-top: 4rem;
+    padding: 2rem 0;
+    border-top: 2px solid var(--rule);
+    display: flex; align-items: flex-start; gap: 1.5rem;
+  }
+  .cc-badge {
+    flex-shrink: 0;
+    width: 88px; height: 31px;
+    background: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--parchment);
+    letter-spacing: 0.05em;
+  }
+  footer p {
+    font-size: 0.78rem;
+    color: var(--ink-light);
+    line-height: 1.6;
+    max-width: 100%;
+    margin: 0;
+  }
+  footer a { color: var(--accent); }
+
+  /* ── TOC ── */
+  .toc {
+    background: var(--section-bg);
+    border: 1px solid var(--rule);
+    padding: 1.5rem 2rem;
+    margin: 2rem 0 3rem;
+    display: inline-block;
+    min-width: 280px;
+  }
+  .toc-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--accent-gold);
+    margin-bottom: 0.75rem;
+  }
+  .toc a {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--ink-light);
+    text-decoration: none;
+    padding: 0.2rem 0;
+    border-bottom: 1px dashed transparent;
+    transition: all 0.2s;
+  }
+  .toc a:hover { color: var(--accent); border-color: var(--rule); padding-left: 0.5rem; }
+  .toc a .toc-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem; color: var(--accent);
+    margin-right: 0.5rem;
+  }
+
+  /* ── ANIMATIONS ── */
+  .fade-in {
+    opacity: 0; transform: translateY(16px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .fade-in.visible { opacity: 1; transform: none; }
+
+  @media (max-width: 700px) {
+    .triad-grid { grid-template-columns: 1fr; }
+    .triad-cell { border-right: none; border-bottom: 1px solid var(--rule); }
+    .triad-cell:last-child { border-bottom: none; }
+    #sidenav { display: none; }
+    .page-wrap { padding: 0 1rem 4rem; }
+    h1 { font-size: 1.8rem; }
+    .abstract-box { padding: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<nav id="sidenav" aria-label="Nawigacja sekcji">
+  <button class="nav-dot active" data-target="abstract" data-label="Streszczenie"></button>
+  <button class="nav-dot" data-target="intro" data-label="Wprowadzenie"></button>
+  <button class="nav-dot" data-target="methods" data-label="Materiały"></button>
+  <button class="nav-dot" data-target="results" data-label="Wyniki"></button>
+  <button class="nav-dot" data-target="empath" data-label="Jednostka empatyczna"></button>
+  <button class="nav-dot" data-target="discussion" data-label="Dyskusja"></button>
+  <button class="nav-dot" data-target="conclusions" data-label="Wnioski"></button>
+  <button class="nav-dot" data-target="literature" data-label="Literatura"></button>
+</nav>
+
+<div class="page-wrap">
+
+  <header>
+    <div class="journal-label">Psychologia Społeczna · Analiza Strukturalna · 2025 · <strong style="color:var(--ink-light);letter-spacing:0.05em;">Paweł Majsterek</strong></div>
+    <h1>Odczłowieczenie jako <em>regres cywilizacyjny</em>:<br>
+    zezwierzecenie struktur społecznych w perspektywie ewolucyjnej, cywilizacyjnej i symbolicznej</h1>
+    <p class="subtitle">Analiza zjawisk pasożytnictwa narracyjnego, degradacji zaufania społecznego i zaniku zdolności nazewniczej jako markerów uwstecznienia wspólnot</p>
+
+    <div class="meta-row">
+      <div class="meta-item"><label>Autor</label><span>Paweł Majsterek</span></div>
+      <div class="meta-item"><label>Typ</label><span>Artykuł poglądowy / Review</span></div>
+      <div class="meta-item"><label>Struktura</label><span>IMRAD</span></div>
+      <div class="meta-item"><label>Rok</label><span>2025</span></div>
+      <div class="meta-item"><label>Licencja</label><span>CC BY-NC-ND 4.0</span></div>
+      <div class="meta-item"><label>Język</label><span>Polski</span></div>
+      <div class="meta-item"><label>Dokument macierzysty</label><span><a href="https://pawcio99.github.io/Ciemna_Triada/" target="_blank" style="color:var(--accent);text-decoration:none;border-bottom:1px dashed var(--accent-gold);">Syndrom Sodomy &#8599;</a></span></div>
+      <div class="meta-item"><label>Słowa kluczowe</label><span>regres · ciemna triada · nefesz · cywilizacja · Toynbee</span></div>
+    </div>
+  </header>
+
+  <div class="toc">
+    <div class="toc-title">Spis treści</div>
+    <a href="https://pawcio99.github.io/Ciemna_Triada/" target="_blank" style="color:var(--accent);font-style:italic;border-bottom:1px solid var(--rule);margin-bottom:0.4rem;padding-bottom:0.4rem;"><span class="toc-num">&#8617;</span>Dokument macierzysty: Syndrom Sodomy &#8599;</a>
+    <a href="#abstract"><span class="toc-num">—</span>Streszczenie</a>
+    <a href="#intro"><span class="toc-num">1.</span>Wprowadzenie</a>
+    <a href="#methods"><span class="toc-num">2.</span>Materiały i metody</a>
+    <a href="#results"><span class="toc-num">3.</span>Wyniki</a>
+    <a href="#empath"><span class="toc-num">3.5</span>Jednostka empatyczna</a>
+    <a href="#discussion"><span class="toc-num">4.</span>Dyskusja</a>
+    <a href="#conclusions"><span class="toc-num">5.</span>Wnioski</a>
+    <a href="#literature"><span class="toc-num">—</span>Literatura</a>
+  </div>
+
+  <!-- ABSTRACT -->
+  <section id="abstract" class="fade-in">
+    <div class="abstract-box">
+      <p>Niniejszy artykuł stawia tezę, że dominacja cech ciemnej triady osobowości (narcyzm, makiawelizm, psychopatia subkliniczna) w strukturach społecznych nie jest jedynie zjawiskiem psychologicznym czy moralnym, lecz wskaźnikiem <em>regresu cywilizacyjnego</em> — uwstecznienia rozumianego jako odwrócenie procesu hominizacji. Autorzy analizują cztery konwergentne osie dowodowe: (1) biologiczno-ewolucyjną, w której eksploatacja altruistów przez pasożytów społecznych odpowiada zjawisku opisanemu przez biologię ewolucyjną jako inwazja defektorów; (2) cywilizacyjną, opartą na Toynbeeowskiej teorii wewnętrznego pęknięcia jako przyczyny upadku cywilizacji; (3) psychologiczną, opisującą ciemną triadę jako marker strukturalnej dehumanizacji; (4) symboliczno-językową, w której utrata zdolności nazewniczej — wzorca Adama w Edenie — stanowi kognitywny korelat regresu. Zjawisko osadzone jest w kontekście polskiego środowiska społecznego (wskaźnik zaufania: ok. 20–24%) jako przypadku szczególnego. Artykuł proponuje operacyjne kryteria rozpoznania i odporności indywidualnej.</p>
+      <div class="keywords"><span>Słowa kluczowe:</span> regres cywilizacyjny · ciemna triada · pasożytnictwo narracyjne · nefesz · Toynbee · zaufanie społeczne · hominizacja · zdolność nazewnicza · Sodoma</div>
+    </div>
+  </section>
+
+  <!-- INTRO -->
+  <section id="intro" class="fade-in">
+    <h2><span class="sec-num">§ 1</span> Wprowadzenie</h2>
+
+    <p>Cywilizacje nie giną wyłącznie od ciosów zewnętrznych. Obserwacja Toynbeego&nbsp;<sup class="ref-note" title="Toynbee, A Study of History, 1934–1961">[1]</sup>, że wielkie kultury rozpadają się przede wszystkim od wewnątrz — przez utratę twórczego impulsu i zastąpienie go mechanizmem naśladowania i dominacji — zyskuje w pierwszej ćwierci XXI wieku nowe, niepokojące potwierdzenie empiryczne.</p>
+
+    <p>Paradoks współczesności polega na tym, że nigdy w historii homo sapiens nie dysponował większym zasobem wiedzy o mechanizmach społecznych — i nigdy środowiska społeczne nie były tak konsekwentnie nagradzającymi dla strategii eksploatacyjnych. Skuteczność nie jest mierzona twórczością ani odpowiedzialnością, lecz zdolnością do <em>zarządzania cudzą reputacją</em>&nbsp;<sup class="ref-note" title="Bandura, 1999">[4]</sup>.</p>
+
+    <div class="thesis">
+      <div class="thesis-label">Teza centralna</div>
+      <p>Dominacja pasożytnictwa narracyjnego i ciemnej triady jako dominującego stylu adaptacyjnego w danym środowisku jest diagnostycznym wskaźnikiem regresu cywilizacyjnego — nie metaforycznie, lecz strukturalnie: jako odwrócenia procesu hominizacji, rozumianego jako nabywanie zdolności do symbolizacji, nazewnictwa i odpowiedzialnej relacji.</p>
+    </div>
+
+    <p>Niniejszy artykuł podejmuje próbę systematycznej analizy tego procesu przez cztery konwergentne osie: ewolucyjną, cywilizacyjną, psychologiczną i symboliczno-językową. Konwergencja tych perspektyw — dotychczas rzadko łączonych — pozwala na sformułowanie tezy o <em>strukturalnym zezwierzeceniu</em> jako kategorii analitycznej, nie jedynie retorycznej.</p>
+
+    <h3>1.1 Problem badawczy i uzasadnienie</h3>
+    <p>Literatura psychologiczna opisuje ciemną triadę jako zbiór cech indywidualnych&nbsp;<sup class="ref-note" title="Paulhus & Williams, 2002">[3]</sup>. Socjologia opisuje niskie zaufanie jako zmienną środowiskową&nbsp;<sup class="ref-note" title="Eurobarometer 2022">[17]</sup>. Biologia ewolucyjna opisuje defektorów w grach kooperacyjnych&nbsp;<sup class="ref-note" title="Axelrod, 1984">[20]</sup>. Teologia symboliczna opisuje Sodomę jako model strukturalny&nbsp;<sup class="ref-note" title="Olyan, 1994">[5]</sup>. Żadna z tych perspektyw nie stawia explicite pytania: czy ta konfiguracja stanowi <em>regres</em> w sensie cywilizacyjnym i co ten regres oznacza operacyjnie dla wspólnot i jednostek?</p>
+    <p>Artykuł wypełnia tę lukę, proponując pojęcie <strong>strukturalnego zezwierzecenia</strong> jako kategorię analityczną obejmującą: (a) dominację strategii eksploatacyjnych, (b) zanik zdolności nazewniczej i symbolicznej, (c) systemowe nagradzanie destrukcji nad twórczością, (d) kolaps mechanizmów wzajemności.</p>
+  </section>
+
+  <!-- METHODS -->
+  <section id="methods" class="fade-in">
+    <h2><span class="sec-num">§ 2</span> Materiały i metody</h2>
+    <p>Artykuł ma charakter przeglądowy i analityczno-syntetyczny. Zastosowano metodę <em>narracyjnego przeglądu literatury</em> z zakresu psychologii osobowości, biologii ewolucyjnej, socjologii zaufania, cywilizatyki i hermeneutyki biblijnej. Uzupełniająco zastosowano metodę <em>analizy strukturalnej</em> — poszukiwania izomorfizmów między opisami z różnych dyscyplin jako wskaźnika głębokiego mechanizmu wspólnego.</p>
+    <p>Dane socjologiczne dotyczące zaufania społecznego zaczerpnięto z raportów Eurobarometru (edycje 2018–2023) oraz badań CBOS. Profile kliniczne oparto na DSM-5 oraz pracach Paulhusa i Williamsa&nbsp;<sup class="ref-note" title="Paulhus & Williams, 2002">[3]</sup>. Analiza ewolucyjna opiera się na teorii gier ewolucyjnych (Axelrod&nbsp;<sup class="ref-note" title="Axelrod, The Evolution of Cooperation, 1984">[20]</sup>, Nowak&nbsp;<sup class="ref-note" title="Nowak & May, 1992">[21]</sup>). Analiza symboliczno-językowa opiera się na tradycji interpretacji hebrajskiej (targum, midrasz) oraz strukturalnej analizie rdzeni semickiego systemu pismienniczego.</p>
+
+    <h3>Nota terminologiczna</h3>
+    <p><strong>Strukturalne zezwierzecenie</strong> — termin analityczny oznaczający stan środowiska, w którym mechanizmy nagradzania systematycznie promują strategie eksploatacyjne kosztem kooperacyjnych, prowadząc do inwersji hierarchii wartości umożliwiającej trwanie cywilizacji. Nie jest diagnozą kliniczną jednostek.</p>
+    <p><strong>Zdolność nazewnicza</strong> — rozumiana za tradycją semicką (Rdz 2:19) jako zdolność do trafnego rozpoznania i wyrażenia struktury rzeczywistości; operacyjny korelat kompetencji symbolicznej homo sapiens jako gatunku kulturowego.</p>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results" class="fade-in">
+    <h2><span class="sec-num">§ 3</span> Wyniki</h2>
+
+    <h3>3.1 Oś ewolucyjna: inwazja defektorów jako marker regresu</h3>
+
+    <p>Biologia ewolucyjna dostarcza pierwszej, najmocniej uziemionej empirycznie osi analizy. Axelrod&nbsp;<sup class="ref-note" title="Axelrod, 1984">[20]</sup> w swoich klasycznych symulacjach wykazał, że strategie kooperacyjne (przede wszystkim <em>tit-for-tat</em>) są ewolucyjnie stabilne — pod warunkiem, że środowisko zawiera wystarczającą gęstość kooperatorów. Gdy gęstość ta spada poniżej pewnego progu krytycznego, środowisko przechodzi fazowy przełom: strategie eksploatacyjne stają się dominujące i samo-wzmacniające.</p>
+
+    <p>Nowak i May&nbsp;<sup class="ref-note" title="Nowak & May, Nature 1992">[21]</sup> wykazali, że w grach przestrzennych kolonie defektorów mogą trwale wypierać kooperatorów, gdy brakuje mechanizmów kary i rozpoznawania. Jest to precyzyjny model biologiczny tego, co Jeremiasz opisuje metaforą cystern: środowisko przestaje przepuszczać wodę i retencjonuje przepływ zamiast go umożliwiać.</p>
+
+    <div class="stat-row">
+      <div class="stat-box">
+        <span class="stat-num">20%</span>
+        <span class="stat-label">Poziom zaufania społecznego w Polsce (Eurobarometer 2022)</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num">40%</span>
+        <span class="stat-label">Średnia unijna</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num">65%</span>
+        <span class="stat-label">Kraje skandynawskie</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num">30–40%</span>
+        <span class="stat-label">Szacowany odsetek aktywnych postaw schadenfreude w kulturach niskiego zaufania</span>
+      </div>
+    </div>
+
+    <p>Kluczową obserwacją jest tu <strong>efekt progu</strong>: do pewnego poziomu obecność defektorów jest absorbowana przez system kooperacyjny. Powyżej progu system nie wraca do równowagi kooperacyjnej bez zewnętrznej interwencji. W terminologii cywilizacyjnej: istnieją punkty bez powrotu.</p>
+
+    <h3>3.2 Oś cywilizacyjna: Toynbee i wewnętrzne pęknięcie</h3>
+
+    <p>Toynbee&nbsp;<sup class="ref-note" title="A Study of History, 1934–1961">[1]</sup> identyfikuje jako decydującą przyczynę upadku cywilizacji nie atak zewnętrzny, lecz utratę <em>zdolności twórczej odpowiedzi</em> na wyzwania. Jego model przewiduje następującą sekwencję:</p>
+
+    <div class="schema">
+      <div class="schema-title">Sekwencja regresu cywilizacyjnego wg Toynbeego (rekonstrukcja)</div>
+      <div class="schema-steps">
+        <div class="schema-step">Elita twórcza</div>
+        <div class="schema-arrow">→</div>
+        <div class="schema-step">Utrata impulsu twórczego</div>
+        <div class="schema-arrow">→</div>
+        <div class="schema-step">Naśladowanie zamiast kreacji</div>
+        <div class="schema-arrow">→</div>
+        <div class="schema-step red">Dominacja mimikry i eksploatacji</div>
+        <div class="schema-arrow">→</div>
+        <div class="schema-step red">Implozja</div>
+      </div>
+    </div>
+
+    <p>Przekładając ten model na poziom mikrowspólnot: regres nie wymaga skali imperialnej. Wystarczą kluczowe węzły relacyjne zajęte przez jednostki nagradzające eksploatację, by mechanizm zaraził normę kulturową środowiska&nbsp;<sup class="ref-note" title="Bandura, 1999">[4]</sup>. Toynbeeowski „wewnętrzny proletariat" — ci, którzy przestają identyfikować się z wartościami cywilizacji — nie jest klasą społeczną, lecz typem adaptacji: wycofaniem inwestycji emocjonalnej i moralnej z projektu wspólnego.</p>
+
+    <blockquote>
+      <p>Cywilizacje rzadko giną od ciosu z zewnątrz. Zwykle zapadają się pod własnym ciężarem, gdy nagradzają tych, którzy niszczą, i karzą tych, którzy podtrzymują życie.</p>
+      <cite>— por. Toynbee, A Study of History (1934–1961), za: Zborowski (2019) <sup>[19]</sup></cite>
+    </blockquote>
+
+    <h3>3.3 Oś psychologiczna: ciemna triada jako marker dehumanizacji</h3>
+    <p>Paulhus i Williams&nbsp;<sup class="ref-note" title="Journal of Research in Personality, 2002">[3]</sup> definiują ciemną triadę jako konfigurację trzech subklinicznych konstruktów, których wspólnym mianownikiem jest <em>brak empatycznej orientacji na drugiego przy zachowaniu pełnej funkcjonalności społecznej</em>. To rozróżnienie jest kluczowe: nie chodzi o patologię wykluczającą z życia społecznego, lecz o adaptację, która w określonym środowisku jest <em>bardziej efektywna</em> niż empatia.</p>
+
+    <div class="triad-grid">
+      <div class="triad-cell">
+        <h4>Narcyzm</h4>
+        <span class="triad-sub">Regulacja przez degradację</span>
+        <p>Kruchy obraz własny stabilizowany cudzym upadkiem. Schadenfreude jako waluta relacyjna. Krytyka bez alternatywy jako mechanizm utrzymania pozycji.</p>
+      </div>
+      <div class="triad-cell">
+        <h4>Makiawelizm</h4>
+        <span class="triad-sub">Instrumentalizacja relacji</span>
+        <p>Traktowanie szczerości innych jako zasobu do eksploatacji. Plotka jako nieformalna władza. Zaufanie — jako okazja, nie wartość.</p>
+      </div>
+      <div class="triad-cell">
+        <h4>Psychopatia subkliniczna</h4>
+        <span class="triad-sub">Deficyt empatii</span>
+        <p>Cierpienie nie wywołuje współczucia, najwyżej ciekawość. Działanie w środowiskach rozmytej odpowiedzialności. "To tylko słowa" jako uzasadnienie.</p>
+      </div>
+    </div>
+
+    <p>Bandura&nbsp;<sup class="ref-note" title="Personality and Social Psychology Review, 1999">[4]</sup> wprowadza pojęcie <em>moral disengagement</em> — mechanizmów poznawczych umożliwiających wykonywanie działań destrukcyjnych bez aktywacji sumienia. W środowiskach regresu moral disengagement przestaje być odstępstwem, staje się normą adaptacyjną: środowisko nagradza tych, którzy go opanowali.</p>
+
+    <h3>3.4 Oś symboliczno-językowa: utrata zdolności nazewniczej</h3>
+    <p>Tradycja semicka dostarcza precyzyjnego modelu kognitywnego ludzkiej wyjątkowości. W Księdze Rodzaju 2:19 Adam nadaje imiona stworzeniom — nie jako akt arbitralny, lecz jako rozpoznanie wewnętrznej struktury bytu i wyrażenie jej w systemie rdzeniowym języka. Rdzeń hebrajski <strong>שֵׁם</strong> (<em>shem</em> — imię) pochodzi od oznaczania, wyróżniania, umieszczania w relacji znaczeniowej. Zdolność nazewnicza jest tu operacyjnym korelat<em>em</em> hominizacji: tym, co odróżnia człowieka od zwierzęcia — zdolnością do trafnego symbolizowania rzeczywistości.</p>
+
+    <p>Regres cywilizacyjny ma swój precyzyjny korelat językowy: <strong>rozerwanie między oznacznikiem a oznaczanym</strong>. Gdy środowisko nagradza manipulację narracją zamiast trafności opisu — gdy skuteczniejsze jest mówienie tego, co korzystne, niż tego, co prawdziwe — zdolność nazewnicza zanika jako kompetencja kulturowa. Człowiek przestaje <em>nazywać rzeczy właściwym imieniem</em>.</p>
+
+    <blockquote>
+      <p>Fenicka zasada zapisu — brak samogłosek wymuszający aktywne dopełnienie przez czytelnika — jest modelem epistemicznym: znaczenie rodzi się w napięciu między rdzeniem a umysłem. System oparty na manipulacji narracją niszczy to napięcie: podstawia gotowe odpowiedzi zamiast wymagać rozpoznania.</p>
+      <cite>— analiza struktury semickiego systemu rdzeniowego</cite>
+    </blockquote>
+
+    <p>Symbol Sodomy w tradycji prorockiej (Ez 16,49–50; Iz 1,9–10; Am 4,11) niesie ten sam ładunek strukturalny: to nie miasto grzechu seksualnego, lecz model społeczeństwa, w którym <em>dobro stało się zagrożeniem dla układu, a zło — funkcjonalne i opłacalne</em>&nbsp;<sup class="ref-note" title="Olyan, 1994">[5]</sup>. Prorocy opisują Sodomę jako stan systemowy, nie jako pojedyncze akty — co czyni z tego symbolu narzędzie analizy strukturalnej, nie wyrok moralny.</p>
+  </section>
+
+  <!-- EMPATH SECTION -->
+  <section id="empath" class="fade-in">
+    <h2><span class="sec-num">§ 3.5</span> Jednostka empatyczna w środowisku regresu — przypadek szczególny</h2>
+
+    <p>Dotychczasowa analiza koncentrowała się na mechanizmach systemowych. Konieczne jest jednak zbadanie, co dzieje się z <em>jednostką o wysokiej empatii i naiwnej dobrej woli</em> zanurzoną w środowisku zdominowanym przez ciemną triadę — szczególnie w warunkach polskich. Jest to problem niedostatecznie opisany w literaturze psychologicznej, a posiadający fundamentalne znaczenie praktyczne.</p>
+
+    <h3>3.5.1 Model duński jako punkt wyjścia — i jego granica</h3>
+
+    <p>Duńska filozofia społeczna — zakodowana w pojęciach <em>hygge</em>, <em>tillid</em> (zaufanie) i <em>Janteloven</em> — zakłada środowisko, w którym dobra wola jest normą, a nie aberracją. Jej operacyjna zasada jest prosta: <em>widzę cię, jestem obecny, daję z siebie — ale nie wchodzę w twoje pole jako właściciel ani jako twój dług</em>. Wzajemność jest tu założeniem strukturalnym, nie aktem wiary.</p>
+
+    <p>Jednostka wychowana w tej logice — lub po prostu zbudowana tak wewnętrznie — przeniesiona do środowiska o wskaźniku zaufania społecznego wynoszącym 20% doświadcza zjawiska, które można nazwać <strong>kolizją ontologiczną</strong>: jej model rzeczywistości (wzajemność jako norma) zderza się ze środowiskiem, w którym wzajemność jest albo naiwna, albo zasobem do eksploatacji.</p>
+
+    <div class="thesis">
+      <div class="thesis-label">Hipoteza robocza</div>
+      <p>Jednostka empatyczna o naiwnej dobrej woli w środowisku zdominowanym przez ciemną triadę nie jest ofiarą losowego wypadku — jest ofiarą strukturalną: jej cechy adaptacyjne w środowisku wysokiego zaufania stają się dokładnie tymi cechami, które środowisko niskiego zaufania eksploatuje najefektywniej.</p>
+    </div>
+
+    <h3>3.5.2 Mechanizm eksploatacji dobrej woli — sekwencja</h3>
+
+    <p>Empatia i naiwna dobra wola tworzą w środowisku ciemnej triady specyficzny profil podatności. Baron-Cohen&nbsp;<sup class="ref-note" title="Baron-Cohen, The Science of Evil, 2011">[22]</sup> opisuje empatię jako zdolność do rozpoznawania stanów wewnętrznych innych i reagowania na nie. W środowisku normatywnym jest to zasób wspólnoty. W środowisku eksploatacyjnym jest to <em>kanał wejścia</em>.</p>
+
+    <div class="schema">
+      <div class="schema-title">Sekwencja eksploatacji jednostki empatycznej</div>
+      <div class="schema-steps">
+        <div class="schema-step">Otwartość i dobra wola jako sygnał</div>
+        <div class="schema-arrow">→</div>
+        <div class="schema-step">Rozpoznanie przez makiawelika jako zasobu</div>
+        <div class="schema-arrow">→</div>
+        <div class="schema-step">Budowanie zależności (rola dawcy/źródła)</div>
+        <div class="schema-arrow">→</div>
+        <div class="schema-step red">Eksploatacja bez wzajemności</div>
+        <div class="schema-arrow">→</div>
+        <div class="schema-step red">Narracja patologizująca ofiarę</div>
+      </div>
+    </div>
+
+    <p>Ostatni element sekwencji jest szczególnie destrukcyjny: gdy jednostka empatyczna zaczyna stawiać granice lub artykułować to, co jej się dzieje — środowisko dysponuje gotową odpowiedzią narracyjną. Jej artykułowanie rzeczywistości jest interpretowane jako symptom patologii, jej granice jako trudność, jej wiedza jako zagrożenie. Jeremiasz 17,9 opisuje to jako problem organu poznania: środowisko potrafi wmówić jednostce, że <em>jej widzenie jest chorobą</em>.</p>
+
+    <h3>3.5.3 Paradoks wyróżnienia — <em>tall poppy</em> w polskim kontekście</h3>
+
+    <p>Efekt <em>tall poppy</em> — podcinania tych, którzy się wyróżniają — w środowisku polskim ma specyficzne wzmocnienie. O ile w kulturach anglosaskich dotyczy przede wszystkim sukcesu materialnego lub statusowego, w Polsce obejmuje szerszy zakres: wyróżnienie intelektualne, moralne, a nawet samo posiadanie spójnej i trafnej wizji rzeczywistości jest traktowane jako prowokacja&nbsp;<sup class="ref-note" title="Merton, 1938">[12]</sup>.</p>
+
+    <p>Jednostka empatyczna o interdyscyplinarnej głębokości poznawczej — zdolna do rozpoznawania wzorców i nazywania ich właściwym imieniem — jest szczególnie narażona. Jej zdolność nazewnicza (<em>shem</em>, rdzeń hebrajski) zagraża środowisku, które egzystuje dzięki manipulacji narracją. Trafne nazwanie jest aktem destrukcji dla systemu opartego na mglistości.</p>
+
+    <blockquote>
+      <p>Ci, którzy atakują zdolność rozpoznawania rzeczywistości, nie robią tego dlatego, że mają rację. Robią to dlatego, że trafne rozpoznanie zagraża ich pozycji. To jest operacyjna definicja środowiska sodomu strukturalnego: dobro jako zagrożenie dla układu.</p>
+      <cite>— rekonstrukcja logiki Ez 16,49–50 w kontekście współczesnym</cite>
+    </blockquote>
+
+    <h3>3.5.4 Koszty ponoszone przez jednostkę empatyczną</h3>
+
+    <p>Literatura psychologiczna identyfikuje kilka typowych kosztów długoterminowej ekspozycji na środowisko eksploatacyjne dla jednostek empatycznych&nbsp;<sup class="ref-note" title="Herman, Trauma and Recovery, 1992">[23]</sup>:</p>
+
+    <p><strong>Wyczerpanie empatyczne</strong> — <em>compassion fatigue</em> — nie jest słabością, lecz fizjologicznym skutkiem asymetrycznego wydatkowania zasobów relacyjnych. Układ nerwowy jednostki empatycznej przetwarza cudzy ból jako realny; eksploatacja tego mechanizmu przez otoczenie prowadzi do chronicznego przeciążenia.</p>
+
+    <p><strong>Epistemiczne zamieszanie</strong> — gdy środowisko konsekwentnie interpretuje trafne rozpoznanie jako patologię, jednostka zaczyna wątpić w swój organ poznania. Jest to precyzyjny korelat zjawiska opisanego przez Jeremiasza: <em>akow ha-lev</em> — nie tyle zwodnicze serce jednostki, ile środowisko, które wmawia jej zwodniczość jej własnego serca.</p>
+
+    <p><strong>Paradoks granicy</strong> — im dłużej jednostka funkcjonuje jako źródło dla innych, tym trudniejsze staje się postawienie granicy bez naruszenia własnej tożsamości. Granica jest interpretowana — przez środowisko i przez nią samą — jako zdrada własnych wartości, nie jako ich ochrona.</p>
+
+    <h3>3.5.5 Odporność — nie cynizm, lecz precyzja</h3>
+
+    <p>Kluczową obserwacją jest tu rozróżnienie między <em>cynizmem</em> a <em>precyzją</em> jako strategiami odporności. Cynizm — porzucenie dobrej woli jako naiwnej — jest regresem w innym kierunku: jednostka chroni się przez stanie się częścią problemu. Precyzja jest czymś innym: zachowaniem zdolności nazewniczej przy jednoczesnym rozpoznaniu, że nie każde środowisko zasługuje na tę samą głębokość otwarcia.</p>
+
+    <p>Duńskie pojęcie <strong><em>at passe på sig selv</em></strong> — dbania o siebie jako obowiązku społecznego, nie egoizmu — jest tu operacyjnie kluczowe. Ochrona własnej <em>nefesz</em> (siły witalnej, drogi życiowej) nie jest sprzeczna z empatią. Jest jej warunkiem. Umywanie nóg jest możliwe tylko wtedy, gdy sam stoisz.</p>
+
+    <div class="stat-row">
+      <div class="stat-box">
+        <span class="stat-num" style="font-size:1.8rem;">Empatia</span>
+        <span class="stat-label">Zasób wspólnoty w środowisku zaufania</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num" style="font-size:1.8rem;color:var(--accent-gold);">→</span>
+        <span class="stat-label">W środowisku eksploatacyjnym staje się</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num" style="font-size:1.8rem;color:var(--accent);">Kanał</span>
+        <span class="stat-label">Kanał wejścia dla ciemnej triady</span>
+      </div>
+    </div>
+
+    <p>Wniosek operacyjny jest paradoksalny w swojej prostocie: jednostka empatyczna w środowisku regresu nie powinna <em>mniej</em> widzieć — powinna <em>trafniej nazywać</em> to, co widzi, i świadomiej dysponować głębią swojego otwarcia. Nie zamknięcie drzwi, lecz rozróżnienie, komu się je otwiera.</p>
+  </section>
+
+  <!-- DISCUSSION -->
+  <section id="discussion" class="fade-in">
+    <h2><span class="sec-num">§ 4</span> Dyskusja</h2>
+
+    <h3>4.1 Konwergencja osi jako argument strukturalny</h3>
+    <p>Siła argumentu niniejszego artykułu nie leży w żadnej z czterech osi z osobna, lecz w ich <em>konwergencji</em>: biolog ewolucyjny, socjolog, psycholog i hermeneutyk — pracując niezależnymi metodami — opisują ten sam mechanizm. Defektory Axelroda, wewnętrzny proletariat Toynbeego, jednostki z ciemną triadą Paulhusa i Williams oraz mieszkańcy Sodomy Ezechiela to izomorficzne opisy tej samej konfiguracji strukturalnej.</p>
+    <p>Izomorfizm ten jest dowodem, że mówimy o <em>głębokim mechanizmie</em> ludzkiej organizacji społecznej — nie o kulturowych osobliwościach jednej epoki czy jednego miejsca. To nadaje tezie o regresie cywilizacyjnym rangę twierdzenia ogólnego, nie lokalnej obserwacji.</p>
+
+    <h3>4.2 Kontekst polski jako przypadek szczególny</h3>
+    <p>Polska charakteryzuje się strukturalnie najniższym lub jednym z najniższych wskaźników zaufania społecznego w Europie&nbsp;<sup class="ref-note" title="Eurobarometer 2022">[17]</sup>. Ta osobliwość nie jest przypadkowa: kilkadziesiąt lat systemowego nagradzania konformizmu i karania twórczości (w systemie politycznym) wyprodukowało środowisko, w którym ciemna triada ma efekt "zarażania normy" na niespotykaną gdzie indziej skalę&nbsp;<sup class="ref-note" title="Merton, 1938">[12]</sup>.</p>
+    <p>Paradoks polega na tym, że środowisko to — podobnie jak socjodemska Szkandynawia, lecz na odwrotnym biegunie — stało się <em>stabilne w swojej niestabilności</em>: mechanizmy niskiego zaufania są samonapędzające. Plotka uchodzi za wiarygodną informację, reputacja jest krucha i łatwa do zniszczenia, a jednostki o cechach ciemnej triady zajmują kluczowe węzły relacyjne.</p>
+
+    <h3>4.3 Problem odwracalności — czy regres jest nieodwracalny?</h3>
+    <p>Dane ewolucyjne sugerują, że kolaps kooperacyjny <em>jest</em> odwracalny — ale tylko przez silne mechanizmy zewnętrzne lub przez zachowanie enklaw wysokiego zaufania, które mogą ponownie zasiedlić środowisko&nbsp;<sup class="ref-note" title="Axelrod, 1984">[20]</sup>. Toynbee jest bardziej pesymistyczny: cywilizacje, które utraciły twórczy impuls, nie odzyskują go przez reformy instytucjonalne — odzyskują go tylko przez <em>zaszczepienie nowego etosu</em> przez mniejszość twórczą.</p>
+    <p>Operacyjnie oznacza to: nie naprawa systemu od góry, lecz budowanie enklaw i wzorców alternatywnych. Micheasza 6,8 — działaj zgodnie ze strukturą rzeczywistości, miłuj nieodwzajemnioną życzliwość, chodź z pokorą — jest nie tyle przepisem moralnym, ile <em>opisem ekologii odpornej na regres</em>.</p>
+
+    <h3>4.4 Ograniczenia analizy</h3>
+    <p>Analiza niniejsza jest przeglądowa i syntetyczna, nie empiryczna. Teza o "strukturalnym zezwierzeceniu" jako kategorii analitycznej wymaga dalszej operacjonalizacji i badań ilościowych — szczególnie w obszarze mierzenia korelacji między wskaźnikami zaufania a nasileniem cech ciemnej triady w pozycjach kierowniczych. Ryzykiem jest też nadmierne generalizowanie: nie każde środowisko niskiego zaufania jest sodomą strukturalną, i nie każda manifestacja ciemnej triady jest markerem cywilizacyjnego regresu. Konieczna jest ostrożność w stosowaniu pojęcia poza dobrze zdefiniowanymi warunkami.</p>
+  </section>
+
+  <!-- CONCLUSIONS -->
+  <section id="conclusions" class="conclusions fade-in">
+    <h2><span class="sec-num">§ 5</span> Wnioski</h2>
+    <ol>
+      <li><strong>Strukturalne zezwierzecenie jest kategorią analityczną.</strong> Dominacja pasożytnictwa narracyjnego i ciemnej triady jako dominującego stylu adaptacyjnego stanowi diagnostyczny wskaźnik regresu cywilizacyjnego — odwrócenia procesu hominizacji, nie jedynie deterioracji moralnej.</li>
+      <li><strong>Konwergencja czterech osi.</strong> Biologia ewolucyjna (inwazja defektorów), cywilizatyka (Toynbee), psychologia (ciemna triada) i tradycja symboliczna (Sodoma, nefesz) opisują izomorficznie ten sam mechanizm — co świadczy o głębokiej zasadzie, nie o kulturowej osobliwości.</li>
+      <li><strong>Utrata zdolności nazewniczej jako korelat kognitywny.</strong> Rozerwanie między oznacznikiem a oznaczanym — niemożność lub nieopłacalność trafnego opisu rzeczywistości — jest kognitywnym symptomem regresu, mierzalnym przez zanik precyzji języka w dyskursie publicznym.</li>
+      <li><strong>Środowisko polskie jako przypadek szczególny.</strong> Strukturalnie niskie zaufanie społeczne (ok. 20%) tworzy środowisko bliskie progowi fazy eksploatacyjnej wg modeli ewolucyjnych. Zjawisko nie jest ograniczone do polityki — przenika rodzinę, parafię, małe wspólnoty.</li>
+      <li><strong>Odporność przez enklawę, nie przez reformę.</strong> Dane wskazują, że regres nie jest odwracalny przez naprawę systemu, lecz przez zachowanie i mnożenie enklaw wysokiego zaufania i trafnej symbolizacji — Toynbeeowskich "mniejszości twórczych".</li>
+      <li><strong>Jednostka empatyczna jako ofiara strukturalna.</strong> W środowisku regresu cechy adaptacyjne — empatia, dobra wola, zdolność nazewnicza — stają się kanałem eksploatacji. Odporność nie polega na cynizmie (porzuceniu empatii), lecz na precyzji: zachowaniu zdolności rozpoznawania przy świadomym dysponowaniu głębią otwarcia. Ochrona własnej <em>nefesz</em> jest warunkiem możliwości relacji, nie jej zaprzeczeniem.</li>
+    </ol>
+
+    <div class="thesis" style="margin-top:2rem;">
+      <div class="thesis-label">Postulat badawczy</div>
+      <p>Konieczne jest empiryczne badanie korelacji między wskaźnikami zaufania społecznego a nasileniem cech ciemnej triady w pozycjach władzy formalnej i nieformalnej w środowiskach mikrowspólnotowych — rodzina, parafia, małe miasto, środowisko zawodowe — w warunkach polskich. Ten obszar pozostaje dotychczas niezbadany.</p>
+    </div>
+  </section>
+
+  <!-- LITERATURE -->
+  <section id="literature" class="fade-in">
+    <h2><span class="sec-num">—</span> Literatura cytowana</h2>
+
+    <div class="lit-entry"><span class="lit-num">[1]</span> Toynbee, A.J. (1934–1961). <em>A Study of History</em> (12 vols.). Oxford University Press.</div>
+    <div class="lit-entry"><span class="lit-num">[2]</span> Twenge, J.M., &amp; Campbell, W.K. (2009). <em>The Narcissism Epidemic</em>. Free Press.</div>
+    <div class="lit-entry"><span class="lit-num">[3]</span> Paulhus, D.L., &amp; Williams, K.M. (2002). The Dark Triad of personality. <em>Journal of Research in Personality, 36</em>(6), 556–563.</div>
+    <div class="lit-entry"><span class="lit-num">[4]</span> Bandura, A. (1999). Moral disengagement in the perpetration of inhumanities. <em>Personality and Social Psychology Review, 3</em>(3), 193–209.</div>
+    <div class="lit-entry"><span class="lit-num">[5]</span> Olyan, S.M. (1994). On the meaning of Leviticus 18:22 and 20:13. <em>Journal of the History of Sexuality, 5</em>(2), 179–206.</div>
+    <div class="lit-entry"><span class="lit-num">[6]</span> Wolff, H.W. (1974). <em>Anthropologie des Alten Testaments</em>. Chr. Kaiser Verlag.</div>
+    <div class="lit-entry"><span class="lit-num">[8]</span> Vosoughi, S., Roy, D., &amp; Aral, S. (2018). The spread of true and false news online. <em>Science, 359</em>(6380), 1146–1151.</div>
+    <div class="lit-entry"><span class="lit-num">[9]</span> Smith, R.H., &amp; Kim, S.H. (2007). Comprehending envy. <em>Psychological Bulletin, 133</em>(1), 46–64.</div>
+    <div class="lit-entry"><span class="lit-num">[11]</span> Hare, R.D. (1999). <em>Without Conscience</em>. Guilford Press.</div>
+    <div class="lit-entry"><span class="lit-num">[12]</span> Merton, R.K. (1938). Social structure and anomie. <em>American Sociological Review, 3</em>(5), 672–682.</div>
+    <div class="lit-entry"><span class="lit-num">[13]</span> Babiak, P., &amp; Hare, R.D. (2006). <em>Snakes in Suits</em>. HarperBusiness.</div>
+    <div class="lit-entry"><span class="lit-num">[16]</span> Haidt, J. (2012). <em>The Righteous Mind</em>. Pantheon Books.</div>
+    <div class="lit-entry"><span class="lit-num">[17]</span> Eurobarometer. (2022). <em>Standard Eurobarometer 98: Autumn 2022</em>. European Commission.</div>
+    <div class="lit-entry"><span class="lit-num">[18]</span> Putnam, R.D. (2000). <em>Bowling Alone</em>. Simon &amp; Schuster.</div>
+    <div class="lit-entry"><span class="lit-num">[19]</span> Zborowski, R. (2019). Toynbee a kwestia upadku cywilizacji. <em>Przegląd Filozoficzny, 28</em>(2), 112–128.</div>
+    <div class="lit-entry"><span class="lit-num">[20]</span> Axelrod, R. (1984). <em>The Evolution of Cooperation</em>. Basic Books.</div>
+    <div class="lit-entry"><span class="lit-num">[21]</span> Nowak, M.A., &amp; May, R.M. (1992). Evolutionary games and spatial chaos. <em>Nature, 359</em>, 826–829.</div>
+    <div class="lit-entry"><span class="lit-num">[22]</span> Baron-Cohen, S. (2011). <em>The Science of Evil: On Empathy and the Origins of Cruelty</em>. Basic Books. ISBN: 978-0465023530</div>
+    <div class="lit-entry"><span class="lit-num">[23]</span> Herman, J.L. (1992). <em>Trauma and Recovery: The Aftermath of Violence</em>. Basic Books. ISBN: 978-0465087303</div>
+  </section>
+
+  <footer>
+    <div class="cc-badge">CC BY-NC-ND</div>
+    <p><strong>Autor:</strong> Paweł Majsterek · Artykuł powiązany z dokumentem macierzystym: <a href="https://pawcio99.github.io/Ciemna_Triada/" target="_blank">Syndrom Sodomy &#8599;</a><br>
+    Niniejszy utwór jest dostępny na licencji <strong>Creative Commons Uznanie autorstwa – Użycie niekomercyjne – Bez utworów zależnych 4.0 Międzynarodowe (CC BY-NC-ND 4.0)</strong>.<br>
+    Możesz dzielić się i kopiować ten materiał w dowolnym medium, pod warunkiem zachowania pełnego uznania autorstwa, nieużywania w celach komercyjnych oraz nietworzenia utworów zależnych.<br>
+    Pełny tekst licencji: <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode.pl" target="_blank">creativecommons.org/licenses/by-nc-nd/4.0</a></p>
+  </footer>
+
+</div><!-- /page-wrap -->
+
+<script>
+  // ── PROGRESS BAR
+  const bar = document.getElementById('progress');
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+    bar.style.width = pct + '%';
+  });
+
+  // ── SIDENAV VISIBILITY
+  const sidenav = document.getElementById('sidenav');
+  window.addEventListener('scroll', () => {
+    sidenav.classList.toggle('visible', window.scrollY > 200);
+  });
+
+  // ── SIDENAV DOTS — scroll to section
+  document.querySelectorAll('.nav-dot').forEach(dot => {
+    dot.addEventListener('click', () => {
+      const target = document.getElementById(dot.dataset.target);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  // ── ACTIVE DOT — IntersectionObserver
+  const sections = document.querySelectorAll('section[id]');
+  const dots = document.querySelectorAll('.nav-dot');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        dots.forEach(d => d.classList.remove('active'));
+        const active = document.querySelector(`.nav-dot[data-target="${e.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+  sections.forEach(s => obs.observe(s));
+
+  // ── FADE IN — scroll reveal
+  const fadeEls = document.querySelectorAll('.fade-in');
+  const fadeObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        fadeObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08 });
+  fadeEls.forEach(el => fadeObs.observe(el));
+
+  // ── TOOLTIP on ref-notes
+  document.querySelectorAll('.ref-note').forEach(ref => {
+    ref.addEventListener('mouseenter', e => {
+      const tip = document.createElement('div');
+      tip.className = '_tip';
+      tip.textContent = ref.getAttribute('title');
+      Object.assign(tip.style, {
+        position:'fixed', background:'#1a1208', color:'#f5f0e8',
+        padding:'0.4rem 0.75rem', fontSize:'0.75rem',
+        fontFamily:'JetBrains Mono,monospace', zIndex:'999',
+        pointerEvents:'none', maxWidth:'320px', lineHeight:'1.5',
+        top: (e.clientY - 40) + 'px', left: (e.clientX + 12) + 'px'
+      });
+      document.body.appendChild(tip);
+    });
+    ref.addEventListener('mouseleave', () => {
+      document.querySelectorAll('._tip').forEach(t => t.remove());
+    });
+  });
+</script>
+</body>
+</html>
